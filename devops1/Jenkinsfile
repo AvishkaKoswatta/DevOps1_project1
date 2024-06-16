@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'laravel2-app'
+        CONTAINER_NAME = 'laravel2-app'
+        DOCKER_COMPOSE_VERSION = '1.29.2'
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    sh "docker-compose --version || curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose"
+                    sh "docker-compose build"
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                script {
+                    sh "docker-compose run --rm app php artisan test"
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    sh "docker-compose up -d"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                sh "docker-compose down"
+            }
+        }
+    }
+}
